@@ -22,8 +22,18 @@ class ElevatorEnv:
         return (self.current_floor, tuple(self.calls), tuple(self.destination))
 
     def step(self, action):
-        self.current_floor += 1
         self.steps += 1
+
+        if action == 0 and self.current_floor < self.n_floors - 1:
+            self.current_floor += 1
+        elif action == 1 and self.current_floor > 0:
+            self.current_floor -= 1
+        elif action == 2:
+            pass
+
+        self.current_floor = max(0, min(self.n_floors - 1, self.current_floor))
+
+
 
 
 
