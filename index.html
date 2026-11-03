@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elevator RL Agent</title>
+<link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <h1>Elevator agent</h1>
+    <p class="sub">A Q-learning agent running a 5-floor elevator. Nobody told it the rules, it learned them from rewards over 20,000 episodes.</p>
+  </header>
+
+  <div class="main">
+    <div class="shaft-wrap">
+      <div class="shaft" id="shaft">
+        <div class="car" id="car"><span>&#9679;</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="stat"><span class="label">Timestep</span><span class="value" id="timestep">0</span></div>
+      <div class="stat"><span class="label">Action</span><span class="value" id="action">&mdash;</span></div>
+      <div class="stat"><span class="label">Reward this timestep</span><span class="value" id="reward">0.0</span></div>
+      <div class="stat"><span class="label">Total reward</span><span class="value big" id="total">0.0</span></div>
+      <div class="stat"><span class="label">Delivered</span><span class="value big" id="delivered">0</span></div>
+      <div class="legend">
+        <div><span class="dot call"></span> waiting on this floor</div>
+        <div><span class="dot dest"></span> rider wants this floor</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="playBtn">Pause</button>
+    <button id="restartBtn">Restart</button>
+    <label class="speed">Speed
+      <input type="range" id="speed" min="60" max="800" value="320" step="20">
+    </label>
+    <input type="range" id="scrub" min="0" max="0" value="0" class="scrub">
+  </div>
+</div>
+
+<script src="run.js"></script>
+<script>
+(function () {
+  const frames = (typeof RUN !== "undefined") ? RUN : [];
+  const nFloors = frames.length ? frames[0].calls.length : 5;
+  const ACTIONS = ["up", "down", "doors"];
+
+  const shaft = document.getElementById("shaft");
+  const car = document.getElementById("car");
+  const scrub = document.getElementById("scrub");
+  const playBtn = document.getElementById("playBtn");
+
+  const rows = [];
+  for (let f = nFloors - 1; f >= 0; f--) {
+    const row = document.createElement("div");
+    row.className = "floor";
+    row.innerHTML =
+      '<span class="num">' + f + '</span>' +
+      '<span class="track"></span>' +
+      '<span class="dot call"></span>' +
+      '<span class="dot dest"></span>';
+    shaft.appendChild(row);
+    rows[f] = row;
+  }
+
+  let i = 0, playing = true, timer = null;
+
+  function draw(idx) {
+    if (!frames.length) return;
+    const fr = frames[idx];
+
+    car.style.top = ((nFloors - 1 - fr.floor) / nFloors * 100) + "%";
+    car.style.height = (100 / nFloors) + "%";
+
+    for (let f = 0; f < nFloors; f++) {
+      rows[f].classList.toggle("here", f === fr.floor);
+      rows[f].querySelector(".call").classList.toggle("on", !!fr.calls[f]);
+      rows[f].querySelector(".dest").classList.toggle("on", !!fr.destination[f]);
+    }
+
+    document.getElementById("timestep").textContent = (idx + 1) + " / " + frames.length;
+    document.getElementById("action").textContent = ACTIONS[fr.action];
+    document.getElementById("reward").textContent = fr.reward.toFixed(1);
+    document.getElementById("total").textContent = fr.total.toFixed(1);
+    document.getElementById("total").className = "value big " + (fr.total >= 0 ? "good" : "bad");
+
+    let delivered = 0;
+    for (let k = 0; k <= idx; k++) delivered += frames[k].delivered;
+    document.getElementById("delivered").textContent = delivered;
+
+    car.classList.toggle("open", fr.action === 2);
+    scrub.value = idx;
+  }
+
+  function timestep() { i = (i + 1) % frames.length; draw(i); }
+
+  function restartTimer() {
+    if (timer) clearInterval(timer);
+    if (playing) timer = setInterval(timestep, +document.getElementById("speed").value);
+  }
+
+  playBtn.addEventListener("click", function () {
+    playing = !playing;
+    playBtn.textContent = playing ? "Pause" : "Play";
+    restartTimer();
+  });
+  document.getElementById("restartBtn").addEventListener("click", function () { i = 0; draw(i); });
+  document.getElementById("speed").addEventListener("input", restartTimer);
+  scrub.addEventListener("input", function () { i = +scrub.value; draw(i); });
+
+  if (frames.length) {
+    scrub.max = frames.length - 1;
+    draw(0);
+    restartTimer();
+  } else {
+    document.querySelector(".sub").textContent =
+      "No run data found. Run export_run.py to generate run.js, then reload this page.";
+  }
+})();
+</script>
+
+</body>
+</html>
