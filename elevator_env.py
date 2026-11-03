@@ -1,4 +1,7 @@
-#file that owns states, rules, and rewards
+#The world the agent lives in: state, rules, and rewards
+# Knows consequences only; never decides anything
+#Actions: 0 = up, 1 = down, 2 = stay / open doors.
+
 import random
 
 class ElevatorEnv:

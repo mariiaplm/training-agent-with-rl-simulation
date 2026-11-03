@@ -1,3 +1,7 @@
+#Q-learning: teaches the agent to run the elevator through trial and error
+#Plays thousands of episodes, updating a Q-table of state -> value per action,
+#then saves the trained table to q_table.pkl
+
 import random
 import pickle #extension that converts python objects into bytes
 from collections import defaultdict
